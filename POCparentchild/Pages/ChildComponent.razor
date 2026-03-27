@@ -1,0 +1,46 @@
+@* No specific using needed here now that it's in _Imports *@
+
+<h4>Add / Edit Product</h4>
+<div class="card p-3 shadow-sm" style="max-width: 400px;">
+    <div class="mb-3">
+        <label class="form-label">Product Name</label>
+        <input @bind="editProduct.Name" placeholder="Name" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Price</label>
+        <input @bind="editProduct.Price" type="number" step="0.01" class="form-control" />
+    </div>
+    <div class="text-end">
+        <button @onclick="HandleSave" class="btn btn-primary">Save Product</button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Product Product { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<Product> OnSave { get; set; }
+
+    private Product editProduct = new();
+
+    protected override void OnParametersSet()
+    {
+        // Simple manual clone to avoid mutating the original reference before Save
+        if (Product != null)
+        {
+            editProduct = new Product
+            {
+                Id = Product.Id,
+                Name = Product.Name,
+                Price = Product.Price
+            };
+        }
+    }
+
+    async Task HandleSave()
+    {
+        // Pass the edited product back up to the parent
+        await OnSave.InvokeAsync(editProduct);
+    }
+}

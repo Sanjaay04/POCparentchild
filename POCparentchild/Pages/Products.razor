@@ -1,0 +1,63 @@
+
+@page "/products"
+@inject HttpClient http
+
+<h3>Products</h3>
+
+<ChildComponent Product="selectedProduct" OnSave="HandleSave" />
+
+<ul>
+@foreach (var item in products)
+{
+    <li>
+        @item.Name - @item.Price
+        <button @onclick="() => Edit(item)">Edit</button>
+        <button @onclick="() => Delete(item.Id)">Delete</button>
+    </li>
+}
+</ul>
+
+@code {
+    List<Product> products = new();
+    Product selectedProduct = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await http.GetFromJsonAsync<List<Product>>("api/products") ?? new();
+    }
+
+    void Edit(Product p)
+    {
+        selectedProduct = p;
+    }
+
+    async Task Delete(string id)
+    {
+        await http.DeleteAsync($"api/products/{id}");
+        products.RemoveAll(x => x.Id == id);
+    }
+
+    async Task HandleSave(Product product)
+    {
+        if (string.IsNullOrEmpty(product.Id))
+        {
+            var res = await http.PostAsJsonAsync("api/products", product);
+            var newProduct = await res.Content.ReadFromJsonAsync<Product>();
+            if (newProduct != null)
+            {
+                products.Add(newProduct);
+            }
+        }
+        else
+        {
+            await http.PutAsJsonAsync($"api/products/{product.Id}", product);
+            var index = products.FindIndex(x => x.Id == product.Id);
+            if (index != -1)
+            {
+                products[index] = product;
+            }
+        }
+
+        selectedProduct = new Product();
+    }
+}
